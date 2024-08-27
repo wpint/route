@@ -64,9 +64,9 @@ class RouteCollector
      *
      * @return void
      */
-    public function getRoutes()
+    public static function getRoutes()
     {
-        return $this->routes;
+        return self::$instance->routes;
     }
 
 

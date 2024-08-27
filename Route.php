@@ -1,6 +1,7 @@
 <?php 
 namespace Wpint\Route;
 
+use Illuminate\Support\Collection;
 use Wpint\Contracts\Hook\HookContract;
 use Wpint\Route\Contracts\RouteContract;
 use Wpint\Route\Enums\RouteScopeEnum;
@@ -27,7 +28,7 @@ abstract class Route
      *
      * @var RouteScopeEnum
      */
-    protected RouteScopeEnum $scope;
+    protected static RouteScopeEnum $scope;
 
     /**
      * route's controller
@@ -94,10 +95,7 @@ abstract class Route
      *
      * @return void
      */
-    public static function scope()
-    {
-        // this method has not been implemented by this class
-    }
+    public abstract static function scope();
 
     /**
      * set route's path
@@ -107,7 +105,7 @@ abstract class Route
      */
     public function path(string $path) : self
     {
-        $this->path = $path;
+        $this->path = trim($path, '/');
         return $this;
     }
 
@@ -123,5 +121,32 @@ abstract class Route
         return $this;
     }
 
+    /**
+     * Get all scoped routes 
+     *
+     * @return Collection
+     */
+    public static function getRoutes() : Collection
+    {
+        $calledClass = get_called_class();
+        if("Wpint\Route\Route" === $calledClass)
+        {
+            return RouteCollector::getRoutes();
+        }
+        
+        return RouteCollector::getRoutes()->filter(fn($route) => $route instanceof $calledClass);
+
+    }
+
+    /**
+     * Get route by URI
+     *
+     * @param string $uri
+     * @return Route|null
+     */
+    public static function getRouteByUri(string $uri) : Route | null
+    {
+        return self::getRoutes()->filter(fn($route) => isset($route->path) && $route->path == $uri)->first();
+    }
 
 }

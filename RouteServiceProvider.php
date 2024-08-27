@@ -5,6 +5,7 @@ use WPINT\Framework\Foundation\Application;
 use Wpint\Route\Concretes\AdminRoute;
 use Wpint\Route\Concretes\AjaxRoute;
 use Wpint\Route\Concretes\RestRoute;
+use Wpint\Route\Concretes\WebRoute;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Support\ServiceProvider;
 
@@ -36,6 +37,13 @@ class RouteServiceProvider extends ServiceProvider
             return new RestRoute();
         });
 
+
+        // rest route
+        $this->app->bind('route.web', function(Application $app)
+        {
+            return new WebRoute();
+        });
+        
     }
 
     /**
@@ -45,7 +53,6 @@ class RouteServiceProvider extends ServiceProvider
      */
     public function boot(Dispatcher $events)
     {
-
     }
 
 }
