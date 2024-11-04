@@ -2,15 +2,20 @@
 namespace Wpint\Route\Concretes;
 
 use Illuminate\Support\Str;
+use WP_Error;
 use Wpint\Contracts\Hook\HookContract;
 use Wpint\Route\Enums\RouteHttpMethodEnum;
 use Wpint\Route\Enums\RouteScopeEnum;
 use Wpint\Route\Route;
 use Wpint\Route\Traits\RouteCollectorTrait;
+use Wpint\Route\Traits\RouteResolverTrait;
+use Wpint\Support\CallbackResolver;
+
+use function PHPUnit\Framework\once;
 
 class WebRoute extends Route implements HookContract
 {
-    use RouteCollectorTrait;
+    use RouteCollectorTrait, RouteResolverTrait;
 
     /**
      * route's method
@@ -27,6 +32,8 @@ class WebRoute extends Route implements HookContract
     protected $params = [];
 
 
+    private static $rendered = false;
+
     /**
      * register the route
      *
@@ -34,10 +41,8 @@ class WebRoute extends Route implements HookContract
      */
     public function register()
     {
-
         add_filter('template_include', [$this, 'wpResgisterWebRoute']);
     }
-
 
     /**
      * set route's http method
@@ -60,7 +65,6 @@ class WebRoute extends Route implements HookContract
     {
         return RouteScopeEnum::WEB;
     }
-
 
     /**
      * set route's path
@@ -99,16 +103,19 @@ class WebRoute extends Route implements HookContract
         $this->params = $params;
         return $this;
     }
-    
+
+    /**
+     * Get request route from param
+     *
+     * @return void
+     */
     public static function getRequestedRoute() : Route | null
     {
         $requestUri = trim(request()->getRequestUri(), '/');
-        $requestMethod = Str::lower(request()->method());
-
-        return self::getRoutes()->first(function($route) use ($requestUri, $requestMethod) {
+        return self::getRoutes()->first(function($route) use ($requestUri) {
             if(
-                $requestMethod === Str::lower($route->method->name) &&
-                preg_match($route->path, $requestUri, $matches)
+                preg_match($route->path, $requestUri, $matches) &&
+                self::routeMethodGate($route->method->name) 
             ){
                 array_shift($matches);
                 $route->params(array_combine(array_values($route->params), array_values($matches)));
@@ -126,14 +133,13 @@ class WebRoute extends Route implements HookContract
     {
         global $post;
 
-        // route resolve
+        // // route resolve
+        
         $route = self::getRequestedRoute();
-        if(
-            $route && 
-            strtolower(request()->method()) === strtolower($route->method->name)
-        ){
-            $resolved = app($route->controller);
-            return $resolved->callAction($route->function, $route->params);
+        if( $route && !self::$rendered ){
+            $resolver = new CallbackResolver($route->callback, $route->params, false);
+            self::$rendered = true;
+            return $this->resolve($resolver);
         }
 
         if (!$post) {
@@ -144,6 +150,39 @@ class WebRoute extends Route implements HookContract
         return $template;
     }
 
+    /**
+     * Validate request method versus the given mehtod
+     *
+     * @param [type] $method
+     * @return void
+     */
+    private static function routeMethodGate(string $method)
+    {
+        $requestMethod = Str::lower(request()->method());
+        $method = Str::lower($method);
+        
+        if($method === RouteHttpMethodEnum::ANY->lower()) return true;    
+    
+        if(in_array($method, [
+            RouteHttpMethodEnum::PUT->lower(),
+            RouteHttpMethodEnum::PATCH->lower(),
+            RouteHttpMethodEnum::DELETE->lower(),
+        ])){
+            if(request()->has(Str::of($method)->prepend('_')) && $requestMethod === RouteHttpMethodEnum::POST->lower()) 
+                return true;
+            else 
+                throw new WP_Error('The route method is not supported');
+        }
+        
+        if(in_array($method, [
+            RouteHttpMethodEnum::GET->lower(),
+            RouteHttpMethodEnum::POST->lower(),
+        ])){
+            if($requestMethod === $method) return true;
+        }
+
+        throw new WP_Error('The route method is not supported');
+    }
 
 
 }

@@ -5,10 +5,12 @@ use Wpint\Route\Traits\RouteCollectorTrait;
 use Wpint\Route\Enums\RouteScopeEnum;
 use Wpint\Contracts\Hook\HookContract;
 use Wpint\Route\Route;
+use Wpint\Route\Traits\RouteResolverTrait;
+use Wpint\Support\CallbackResolver;
 
 class AdminRoute extends Route implements HookContract
 {
-    use RouteCollectorTrait;
+    use RouteCollectorTrait, RouteResolverTrait;
 
     /**
      * Page's title 
@@ -62,7 +64,7 @@ class AdminRoute extends Route implements HookContract
     {
         add_action('admin_menu', [$this, 'wpRegisterAdminRoute']);
     }
-
+    
     /**
      * Route scope
      *
@@ -154,16 +156,17 @@ class AdminRoute extends Route implements HookContract
     {
         if(!$this->parent){
             add_menu_page(
-                __( $this->pageTitle, 'textdomain' ),
-                __( $this->menuTitle, 'textdomain' ),
+                __( $this->pageTitle, 'wpint_framework' ),
+                __( $this->menuTitle, 'wpint_framework' ),
                 $this->capability,
                 $this->path,
                 function() {
-                    $controller = app($this->controller)->middleware($this->middleware);
-                    return $controller->callAction(
-                        $this->function, 
-                        [1]
-                    );
+                    $resolver = new CallbackResolver($this->callback, [], false);
+                    return $this->resolve($resolver);
+                    // $callback = CallbackResolver::export($this->callback, [], false);
+                    // $resolved = app($callback['callback']['class']);
+                    // $resolved->middleware($this->middleware);
+                    // return $resolved->callAction($callback['callback']['method'], $callback['params']);
                 },
                 $this->icon,
                 $this->position
@@ -173,13 +176,15 @@ class AdminRoute extends Route implements HookContract
         {
             add_submenu_page(
                 $this->parent->path, 
-                __( $this->pageTitle, 'textdomain' ),
-                __( $this->menuTitle, 'textdomain' ),
+                __( $this->pageTitle, 'wpint_framework' ),
+                __( $this->menuTitle, 'wpint_framework' ),
                 $this->capability,
                 $this->path, 
                 function() {
-                    $controller = app($this->controller)->middleware($this->middleware);
-                    return $controller->callAction($this->function, ['test']);
+                    $callback = CallbackResolver::export($this->callback, [], false);
+                    $resolved = app($callback['callback']['class']);
+                    $resolved->middleware($this->middleware);
+                    return $resolved->callAction($callback['callback']['method'], $callback['params']);
                 }, 
                 $this->position
             );

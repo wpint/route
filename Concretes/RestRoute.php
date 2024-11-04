@@ -1,7 +1,6 @@
 <?php 
 namespace Wpint\Route\Concretes;
 
-use WPINT\Framework\Include\CallbackResolver;
 use Wpint\Route\Enums\RouteHttpMethodEnum;
 use Wpint\Route\Enums\RouteScopeEnum;
 use Wpint\Route\Traits\RouteCollectorTrait;
@@ -10,10 +9,12 @@ use Wpint\Route\Route;
 use WP_REST_Request;
 use WP_Error;
 use Closure;
+use Wpint\Route\Traits\RouteResolverTrait;
+use Wpint\Support\CallbackResolver;
 
 class RestRoute extends Route implements HookContract
 {
-    use RouteCollectorTrait;
+    use RouteCollectorTrait, RouteResolverTrait;
 
     /**
      * route's namespace
@@ -45,6 +46,8 @@ class RestRoute extends Route implements HookContract
     {   
         add_action('rest_api_init', [$this, 'wpRegisterRestEndpoint']);
     }
+
+
 
     /**
      * set route's http method
@@ -108,8 +111,11 @@ class RestRoute extends Route implements HookContract
             'methods'  => $this->method->value,
             'callback'  => function($data)
             {
-                $controller = app($this->controller)->middleware($this->middleware);
-                return $controller->callAction($this->function, $data->get_params());
+                
+                $callback = CallbackResolver::export($this->callback, $data->get_params(), false);
+                $resolved = app($callback['callback']['class']);
+                $resolved->middleware($this->middleware);
+                return $resolved->callAction($callback['callback']['method'], $callback['params']);
             },
             'permission_callback'   => function(WP_REST_Request $request)
                 {

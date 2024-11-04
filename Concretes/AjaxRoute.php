@@ -6,10 +6,12 @@ use Wpint\Route\Traits\RouteCollectorTrait;
 use Wpint\Contracts\Hook\HookContract;
 use \Illuminate\Support\Str;
 use Wpint\Route\Route;
+use Wpint\Route\Traits\RouteResolverTrait;
+use Wpint\Support\CallbackResolver;
 
 class AjaxRoute extends Route implements HookContract
 {
-    use RouteCollectorTrait;
+    use RouteCollectorTrait, RouteResolverTrait;
 
     /**
      * route's action
@@ -27,7 +29,7 @@ class AjaxRoute extends Route implements HookContract
     {
         add_action( "wp_ajax_{$this->getAction()}", [$this, 'wpResgisterAjaxRoute'] );
     }
-
+    
     /**
      * Route scope
      *
@@ -45,8 +47,10 @@ class AjaxRoute extends Route implements HookContract
      */
     public function wpResgisterAjaxRoute()
     {
-        $controller = app($this->controller)->middleware($this->middleware);
-        return $controller->callAction($this->function, [1]);
+        $callback = CallbackResolver::export($this->callback, [], false);
+        $resolved = app($callback['callback']['class']);
+        $resolved->middleware($this->middleware);
+        return $resolved->callAction($callback['callback']['method'], $callback['params']);
     }
 
     /**

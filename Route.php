@@ -3,8 +3,10 @@ namespace Wpint\Route;
 
 use Illuminate\Support\Collection;
 use Wpint\Contracts\Hook\HookContract;
+use WPINT\Framework\Include\Middleware\Handler;
 use Wpint\Route\Contracts\RouteContract;
 use Wpint\Route\Enums\RouteScopeEnum;
+use Wpint\Support\CallbackResolver;
 
 abstract class Route
 {
@@ -31,18 +33,18 @@ abstract class Route
     protected static RouteScopeEnum $scope;
 
     /**
-     * route's controller
+     * route's callback
      *
      * @var string
      */
-    protected string $controller;
+    protected $callback;
 
-    /**
-     * route's controller's method
-     *
-     * @var string
-     */
-    protected string $function;
+    // /**
+    //  * route's controller's method
+    //  *
+    //  * @var string
+    //  */
+    // protected string $function;
 
     /**
      * route's middlewares
@@ -50,6 +52,14 @@ abstract class Route
      * @var array
      */
     protected $middleware = [];
+
+
+    public function __construct(string $name, array|callable $callback)
+    {
+        $this->name($name);
+        $this->callback($callback);
+    }
+
 
     /**
      * add the route to the collector
@@ -63,17 +73,30 @@ abstract class Route
         $collector->addRoute($route);
         return $route;
     }
- 
+
+
     /**
      * set route's controller class and metod
      *
      * @param array $controller
      * @return self
      */
-    public function controller(array $controller) : self
+    public function callback($callback) : self
     {
-        $this->controller = $controller[0];
-        $this->function = $controller[1];
+        $this->callback = $callback;
+        return $this;
+    }
+
+
+    /**
+     * alias of the callback method 
+     *
+     * @param array $controller
+     * @return self
+     */
+    public function controller($callback) : self
+    {
+        $this->callback($callback);
         return $this;
     }
 
@@ -144,9 +167,20 @@ abstract class Route
      * @param string $uri
      * @return Route|null
      */
-    public static function getRouteByUri(string $uri) : Route | null
+    public static function getRouteByUri(string $uri): Route|null
     {
         return self::getRoutes()->filter(fn($route) => isset($route->path) && $route->path == $uri)->first();
+    }
+
+    /**
+     * Get route by name
+     *
+     * @param string $name
+     * @return Route|null
+     */
+    public static function getByName(string $name): Route|null
+    {
+        return self::getRoutes()->filter(fn($route) => isset($route->name) && $route->name === $name)->first();
     }
 
 }
