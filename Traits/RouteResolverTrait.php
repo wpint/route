@@ -22,7 +22,6 @@ trait RouteResolverTrait
             $resolved->middleware($this->middleware); 
             return $resolved->callAction($callback['method'], $params);
         }
-
         
         $request = app('request');
         $next = function($request) use ($callback, $params) {

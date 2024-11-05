@@ -11,8 +11,6 @@ use Wpint\Route\Traits\RouteCollectorTrait;
 use Wpint\Route\Traits\RouteResolverTrait;
 use Wpint\Support\CallbackResolver;
 
-use function PHPUnit\Framework\once;
-
 class WebRoute extends Route implements HookContract
 {
     use RouteCollectorTrait, RouteResolverTrait;
@@ -31,7 +29,11 @@ class WebRoute extends Route implements HookContract
      */
     protected $params = [];
 
-
+    /**
+     * $Rendered
+     *
+     * @var boolean
+     */
     private static $rendered = false;
 
     /**
@@ -132,9 +134,7 @@ class WebRoute extends Route implements HookContract
     public function wpResgisterWebRoute($template)
     {
         global $post;
-
-        // // route resolve
-        
+        // route resolve
         $route = self::getRequestedRoute();
         if( $route && !self::$rendered ){
             $resolver = new CallbackResolver($route->callback, $route->params, false);
@@ -142,10 +142,6 @@ class WebRoute extends Route implements HookContract
             return $this->resolve($resolver);
         }
 
-        if (!$post) {
-
-            return $template;
-        }
         
         return $template;
     }
