@@ -19,10 +19,8 @@ trait RouteResolverTrait
         $params = $resolver->getParams();
         if(is_array($callback) && isset($callback['class'])) {
             $resolved = app($callback['class']);
-            $resolved->middleware($this->middleware); 
-            return $resolved->callAction($callback['method'], $params);
+            return $resolved->callAction($callback['method'], $this->middleware, $params);
         }
-        
         $request = app('request');
         $next = function($request) use ($callback, $params) {
             return  app()->call($callback, $params);
