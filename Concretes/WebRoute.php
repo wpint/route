@@ -13,7 +13,7 @@ use Wpint\Support\CallbackResolver;
 
 class WebRoute extends Route implements HookContract
 {
-    use RouteCollectorTrait, RouteResolverTrait;
+    use RouteCollectorTrait;
 
     /**
      * route's method
@@ -139,7 +139,7 @@ class WebRoute extends Route implements HookContract
         if( $route && !self::$rendered ){
             $resolver = new CallbackResolver($route->callback, $route->params, false);
             self::$rendered = true;
-            return $this->resolve($resolver);
+            return $route->resolve($resolver);
         }
 
         

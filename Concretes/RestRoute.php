@@ -14,7 +14,7 @@ use Wpint\Support\CallbackResolver;
 
 class RestRoute extends Route implements HookContract
 {
-    use RouteCollectorTrait, RouteResolverTrait;
+    use RouteCollectorTrait;
 
     /**
      * route's namespace
@@ -111,11 +111,10 @@ class RestRoute extends Route implements HookContract
             'methods'  => $this->method->value,
             'callback'  => function($data)
             {
-                
-                $callback = CallbackResolver::export($this->callback, $data->get_params(), false);
-                $resolved = app($callback['callback']['class']);
-                $resolved->middleware($this->middleware);
-                return $resolved->callAction($callback['callback']['method'], $callback['params']);
+                // route resolve
+                $exported = CallbackResolver::export($this->callback, $data->get_params(), false);
+                $resolver = new CallbackResolver($exported['callback'], $exported['params'], false);             
+                return $this->resolve($resolver);
             },
             'permission_callback'   => function(WP_REST_Request $request)
                 {

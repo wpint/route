@@ -183,4 +183,26 @@ abstract class Route
         return self::getRoutes()->filter(fn($route) => isset($route->name) && $route->name === $name)->first();
     }
 
+    /**
+     * Run proper resolved callback 
+     *
+     * @param CallbackResolver $resolver
+     * @return void
+     */
+    public function resolve(CallbackResolver $resolver)
+    {
+        $callback = $resolver->getCallback();
+        $params = $resolver->getParams();
+        if(is_array($callback) && isset($callback['class'])) {
+            $resolved = app($callback['class']);
+            return $resolved->callAction($callback['method'], $this->middleware, $params);
+        }
+        
+        $next = function($request) use ($callback, $params) {
+            return  app()->call($callback, $params);
+        };
+        // Run all the middlewares
+        return Handler::evaluate($this->middleware, $next);
+    }
+
 }

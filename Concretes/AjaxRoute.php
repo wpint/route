@@ -11,7 +11,7 @@ use Wpint\Support\CallbackResolver;
 
 class AjaxRoute extends Route implements HookContract
 {
-    use RouteCollectorTrait, RouteResolverTrait;
+    use RouteCollectorTrait;
 
     /**
      * route's action
@@ -21,13 +21,27 @@ class AjaxRoute extends Route implements HookContract
     private $action;
  
     /**
+     * route's security
+     *
+     * @var [type]
+     */
+    private $private = false;
+
+    /**
      * Register the ajax route
      *
      * @return void
      */
     public function register()
     {
-        add_action( "wp_ajax_{$this->getAction()}", [$this, 'wpResgisterAjaxRoute'] );
+        if($this->private)
+        {
+            add_action( "wp_ajax_{$this->getAction()}", [$this, 'wpResgisterAjaxRoute'] );
+        } else {
+            add_action( "wp_ajax_{$this->getAction()}", [$this, 'wpResgisterAjaxRoute'] );
+            add_action( "wp_ajax_nopriv_{$this->getAction()}", [$this, 'wpResgisterAjaxRoute'] );
+        }
+
     }
     
     /**
@@ -41,16 +55,26 @@ class AjaxRoute extends Route implements HookContract
     }
 
     /**
+     * Route's security
+     *
+     * @return self
+     */
+    public function pivate() : self 
+    {
+        $this->private = true;
+        return $this;
+    }
+
+    /**
      * register & call the controller's  ajax callback
      *
      * @return void
      */
     public function wpResgisterAjaxRoute()
     {
-        $callback = CallbackResolver::export($this->callback, [], false);
-        $resolved = app($callback['callback']['class']);
-        $resolved->middleware($this->middleware);
-        return $resolved->callAction($callback['callback']['method'], $callback['params']);
+        // route resolve
+        $resolver = new CallbackResolver($this['callback'], [], false);             
+        return $this->resolve($resolver);
     }
 
     /**

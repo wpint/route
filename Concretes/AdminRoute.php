@@ -10,7 +10,7 @@ use Wpint\Support\CallbackResolver;
 
 class AdminRoute extends Route implements HookContract
 {
-    use RouteCollectorTrait, RouteResolverTrait;
+    use RouteCollectorTrait;
 
     /**
      * Page's title 
@@ -46,6 +46,13 @@ class AdminRoute extends Route implements HookContract
      * @var integer|null
      */
     private int|null $position = null;
+
+    /**
+     * $Rendered
+     *
+     * @var boolean
+     */
+    private static $rendered = false;
 
     /**
      * The parent of this page
@@ -161,12 +168,13 @@ class AdminRoute extends Route implements HookContract
                 $this->capability,
                 $this->path,
                 function() {
-                    $resolver = new CallbackResolver($this->callback, [], false);
-                    return $this->resolve($resolver);
-                    // $callback = CallbackResolver::export($this->callback, [], false);
-                    // $resolved = app($callback['callback']['class']);
-                    // $resolved->middleware($this->middleware);
-                    // return $resolved->callAction($callback['callback']['method'], $callback['params']);
+                    // route resolve
+                    if( !self::$rendered ){
+                        $resolver = new CallbackResolver($this->callback, [], false);
+                        self::$rendered = true;
+                        return $this->resolve($resolver);
+                    }  
+                    
                 },
                 $this->icon,
                 $this->position
@@ -181,10 +189,8 @@ class AdminRoute extends Route implements HookContract
                 $this->capability,
                 $this->path, 
                 function() {
-                    $callback = CallbackResolver::export($this->callback, [], false);
-                    $resolved = app($callback['callback']['class']);
-                    $resolved->middleware($this->middleware);
-                    return $resolved->callAction($callback['callback']['method'], $callback['params']);
+                    $resolver = new CallbackResolver($this->callback, [], false);             
+                    return $this->resolve($resolver);
                 }, 
                 $this->position
             );
