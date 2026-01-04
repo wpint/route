@@ -1,13 +1,13 @@
 <?php 
 namespace Wpint\Route;
 
-use WPINT\Framework\Foundation\Application;
 use Wpint\Route\Concretes\AdminRoute;
 use Wpint\Route\Concretes\AjaxRoute;
 use Wpint\Route\Concretes\RestRoute;
 use Wpint\Route\Concretes\WebRoute;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Support\ServiceProvider;
+use WPINT\Core\Foundation\Application;
+use WPINT\Core\Foundation\ServiceProvider;
 
 class RouteServiceProvider extends ServiceProvider
 {

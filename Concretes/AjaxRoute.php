@@ -6,7 +6,6 @@ use Wpint\Route\Traits\RouteCollectorTrait;
 use Wpint\Contracts\Hook\HookContract;
 use \Illuminate\Support\Str;
 use Wpint\Route\Route;
-use Wpint\Route\Traits\RouteResolverTrait;
 use Wpint\Support\CallbackResolver;
 
 class AjaxRoute extends Route implements HookContract
@@ -59,7 +58,7 @@ class AjaxRoute extends Route implements HookContract
      *
      * @return self
      */
-    public function pivate() : self 
+    public function private() : self 
     {
         $this->private = true;
         return $this;
@@ -73,7 +72,7 @@ class AjaxRoute extends Route implements HookContract
     public function wpResgisterAjaxRoute()
     {
         // route resolve
-        $resolver = new CallbackResolver($this['callback'], [], false);             
+        $resolver = new CallbackResolver($this->callback, [], false);             
         return $this->resolve($resolver);
     }
 
